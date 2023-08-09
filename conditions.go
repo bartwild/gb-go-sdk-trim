@@ -323,7 +323,6 @@ func compare(comp string, x interface{}, y interface{}) bool {
 		}
 
 	case string:
-		var v bool
 		xs := x.(string)
 		ys, ok := y.(string)
 		if !ok {
@@ -332,29 +331,13 @@ func compare(comp string, x interface{}, y interface{}) bool {
 		}
 		switch comp {
 		case "$lt":
-			v = xs < ys
-			if !v {
-				v = xs < strings.TrimSpace(ys)
-			}
-			return v
+			return strings.TrimSpace(xs) < strings.TrimSpace(ys)
 		case "$lte":
-			v = xs <= ys
-			if !v {
-				v = xs <= strings.TrimSpace(ys)
-			}
-			return v
+			return strings.TrimSpace(xs) <= strings.TrimSpace(ys)
 		case "$gt":
-			v = xs > ys
-			if !v {
-				v = xs > strings.TrimSpace(ys)
-			}
-			return v
+			return strings.TrimSpace(xs) > strings.TrimSpace(ys)
 		case "$gte":
-			v = xs >= ys
-			if !v {
-				v = xs >= strings.TrimSpace(ys)
-			}
-			return v
+			return strings.TrimSpace(xs) >= strings.TrimSpace(ys)
 		}
 	}
 	return false
@@ -472,11 +455,7 @@ func condEq(a, b interface{}) bool {
 	case float64:
 		return a.(float64) == b.(float64)
 	case string:
-		val := a.(string) == b.(string)
-		if !val {
-			val = a.(string) == strings.TrimSpace(b.(string))
-		}
-		return val
+		return strings.TrimSpace(a.(string)) == strings.TrimSpace(b.(string))
 	case bool:
 		return a.(bool) == b.(bool)
 	default:
