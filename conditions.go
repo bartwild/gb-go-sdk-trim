@@ -60,7 +60,7 @@ func (cond orCondition) Eval(attrs Attributes) bool {
 
 // Evaluate NORed list of conditions.
 func (cond norCondition) Eval(attrs Attributes) bool {
-	or := orCondition{cond.conds}
+	or := orCondition(cond)
 	return !or.Eval(attrs)
 }
 
@@ -227,10 +227,10 @@ func isOperatorObject(obj map[string]interface{}) bool {
 func evalOperatorCondition(key string, attrVal interface{}, condVal interface{}) bool {
 	switch key {
 	case "$eq":
-		return reflect.DeepEqual(attrVal, condVal)
+		return condEq(attrVal, condVal)
 
 	case "$ne":
-		return !reflect.DeepEqual(attrVal, condVal)
+		return !condEq(attrVal, condVal)
 
 	case "$lt", "$lte", "$gt", "$gte":
 		return compare(key, attrVal, condVal)
@@ -323,6 +323,7 @@ func compare(comp string, x interface{}, y interface{}) bool {
 		}
 
 	case string:
+		var v bool
 		xs := x.(string)
 		ys, ok := y.(string)
 		if !ok {
@@ -331,13 +332,29 @@ func compare(comp string, x interface{}, y interface{}) bool {
 		}
 		switch comp {
 		case "$lt":
-			return xs < ys
+			v = xs < ys
+			if !v {
+				v = xs < strings.TrimSpace(ys)
+			}
+			return v
 		case "$lte":
-			return xs <= ys
+			v = xs <= ys
+			if !v {
+				v = xs <= strings.TrimSpace(ys)
+			}
+			return v
 		case "$gt":
-			return xs > ys
+			v = xs > ys
+			if !v {
+				v = xs > strings.TrimSpace(ys)
+			}
+			return v
 		case "$gte":
-			return xs >= ys
+			v = xs >= ys
+			if !v {
+				v = xs >= strings.TrimSpace(ys)
+			}
+			return v
 		}
 	}
 	return false
@@ -345,14 +362,33 @@ func compare(comp string, x interface{}, y interface{}) bool {
 
 // Check for membership of a JSON value in a JSON array.
 func elementIn(v interface{}, array interface{}) bool {
-	vals, ok := array.([]interface{})
-	if !ok {
-		return false
-	}
-	for _, val := range vals {
-		if reflect.DeepEqual(v, val) {
-			return true
+	switch arr := array.(type) {
+	case []bool:
+		for _, val := range arr {
+			if val == v {
+				return true
+			}
 		}
+	case []string:
+		for _, val := range arr {
+			if val == v {
+				return true
+			}
+		}
+	case []float64:
+		for _, val := range arr {
+			if val == v {
+				return true
+			}
+		}
+	case []interface{}:
+		for _, val := range arr {
+			if reflect.DeepEqual(v, val) {
+				return true
+			}
+		}
+	default:
+		return false
 	}
 	return false
 }
@@ -429,4 +465,17 @@ func evalAll(condVal interface{}, attrVal interface{}) bool {
 		}
 	}
 	return true
+}
+
+func condEq(a, b interface{}) bool {
+	switch a.(type) {
+	case float64:
+		return a.(float64) == b.(float64)
+	case string:
+		return a.(string) == b.(string)
+	case bool:
+		return a.(bool) == b.(bool)
+	default:
+		return reflect.DeepEqual(a, b)
+	}
 }

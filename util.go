@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+const epsilon = 0.01
+
 // VariationRange represents a single bucket range.
 type VariationRange struct {
 	Min float64
@@ -39,7 +41,7 @@ func getBucketRanges(numVariations int, coverage float64, weights []float64) []V
 	}
 
 	// Default to equal weights if missing or invalid
-	if weights == nil || len(weights) == 0 {
+	if len(weights) == 0 {
 		weights = getEqualWeights(numVariations)
 	}
 	if len(weights) != numVariations {
@@ -52,7 +54,7 @@ func getBucketRanges(numVariations int, coverage float64, weights []float64) []V
 	for i := range weights {
 		totalWeight += weights[i]
 	}
-	if totalWeight < 0.99 || totalWeight > 1.01 {
+	if totalWeight < 1-epsilon || totalWeight > 1+epsilon {
 		logWarn(WarnExpWeightsWrongTotal)
 		weights = getEqualWeights(numVariations)
 	}
@@ -129,19 +131,19 @@ func truthy(v interface{}) bool {
 	if v == nil {
 		return false
 	}
-	switch v.(type) {
+	switch val := v.(type) {
 	case string:
-		return v.(string) != ""
+		return val != ""
 	case bool:
-		return v.(bool)
+		return val
 	case int:
-		return v.(int) != 0
+		return val != 0
 	case uint:
-		return v.(uint) != 0
+		return val != 0
 	case float32:
-		return v.(float32) != 0
+		return val != 0
 	case float64:
-		return v.(float64) != 0
+		return val != 0
 	}
 	return true
 }
