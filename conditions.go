@@ -472,7 +472,11 @@ func condEq(a, b interface{}) bool {
 	case float64:
 		return a.(float64) == b.(float64)
 	case string:
-		return a.(string) == b.(string)
+		val := a.(string) == b.(string)
+		if !val {
+			val = a.(string) == strings.TrimSpace(b.(string))
+		}
+		return val
 	case bool:
 		return a.(bool) == b.(bool)
 	default:
